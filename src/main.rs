@@ -24,7 +24,10 @@ use bytes::buf::Buf;
 fn init_logging() {
     use simplelog::*;
 
-    CombinedLogger::init(vec![
+    fn get_terminal_logger() -> Box<dyn SharedLogger> {
+        // Since TermLogger can fail when there is no terminal (e.g. running from systemd),
+        // we need to fall back to a SimpleLogger, which is guaranteed not to fail.
+
         TermLogger::new(
             LevelFilter::Info,
             ConfigBuilder::new()
@@ -32,7 +35,19 @@ fn init_logging() {
                 .build(),
             TerminalMode::Mixed,
         )
-        .unwrap(),
+        .map(|logger| logger as Box<dyn SharedLogger>)
+        .unwrap_or_else(|| {
+            SimpleLogger::new(
+                LevelFilter::Info,
+                ConfigBuilder::new()
+                    .set_level_padding(LevelPadding::Off)
+                    .build()
+            )
+        })
+    }
+
+    CombinedLogger::init(vec![
+        get_terminal_logger(),
         WriteLogger::new(
             LevelFilter::Info,
             ConfigBuilder::new()

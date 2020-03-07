@@ -7,4 +7,5 @@ RUN cargo install --path .
 FROM debian:buster-slim
 COPY --from=builder /usr/local/cargo/bin/super-simple-upload /usr/local/bin/super-simple-upload
 
+WORKDIR /app
 CMD ["super-simple-upload"]
