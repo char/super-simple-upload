@@ -89,11 +89,14 @@ async fn handle_upload(
     let mut names: Vec<String> = Vec::new();
 
     while let Some(Ok(part)) = form.next().await {
-        let extension = part.filename().and_then(|name| name.split(".").last());
+        let extension = part.filename()
+            .and_then(|name| if name.contains(".") { Some(name) } else { None })
+            .and_then(|name| name.split(".").last());
+
         let orig_filename = part.filename().unwrap_or("<none>").to_string();
         let name = match extension {
             Some(extension) => format!("{}.{}", generate_random_string(5), extension),
-            None => generate_random_string(6),
+            None => generate_random_string(5),
         };
 
         if let Err(_) = write_file(&name, part).await {
